@@ -3,23 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Proximity Voice Chat</title>
+    <title>Minecraft Bedrock Voice Chat</title>
     <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; font-family: sans-serif; }
-        body { background: #121212; color: #fff; display: flex; justify-content: center; padding: 20px; }
-        .card { background: #1e1e1e; width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        :root {
+            --bg-color: #0d0f17;
+            --card-bg: rgba(22, 27, 46, 0.85);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #f3f4f6;
+            --text-dim: #9ca3af;
+        }
+
+        * { box-sizing: border-box; font-family: 'Kanit', sans-serif; transition: all 0.2s ease; }
+        body { 
+            background: var(--bg-color); 
+            background-image: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #0d0f17 100%);
+            color: var(--text); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 15px; 
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(16px);
+            width: 100%; 
+            max-width: 420px; 
+            padding: 25px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
         .step { display: none; }
-        .step.active { display: block; }
-        h2 { text-align: center; margin-top: 0; color: #4caf50; }
-        .btn { width: 100%; padding: 12px; margin-top: 10px; background: #4caf50; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-danger { background: #f44336; }
-        .btn-secondary { background: #444; }
-        input, select { width: 100%; padding: 10px; margin: 8px 0; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 6px; }
-        .meter-box { width: 100%; background: #333; height: 15px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
-        .meter-bar { width: 0%; height: 100%; background: #4caf50; transition: width 0.1s; }
-        .setting-group { margin: 15px 0; }
-        .setting-group label { display: block; font-size: 14px; margin-bottom: 5px; }
+        .step.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { text-align: center; margin-top: 0; font-weight: 600; color: #fff; text-shadow: 0 0 10px var(--primary-glow); }
+        .subtitle { text-align: center; color: var(--text-dim); font-size: 14px; margin-bottom: 20px; }
+
+        .btn { 
+            width: 100%; padding: 14px; margin-top: 12px; 
+            background: linear-gradient(135deg, var(--primary), #4f46e5); 
+            border: none; color: white; border-radius: 12px; 
+            font-weight: 600; font-size: 16px; cursor: pointer; 
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-danger { background: linear-gradient(135deg, var(--danger), #dc2626); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+        .btn-secondary { background: rgba(255,255,255,0.08); color: var(--text); box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-pip { background: linear-gradient(135deg, #8b5cf6, #6d28d9); margin-bottom: 10px; }
+
+        label { display: block; font-size: 14px; color: var(--text-dim); margin-top: 12px; margin-bottom: 4px; }
+        input, select { 
+            width: 100%; padding: 12px 16px; 
+            background: rgba(0, 0, 0, 0.4); 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            color: white; border-radius: 10px; font-size: 15px; outline: none;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+
+        /* แถบไฟวัดระดับเสียง */
+        .meter-box { width: 100%; background: rgba(0,0,0,0.5); height: 18px; border-radius: 20px; overflow: hidden; margin: 8px 0 15px 0; border: 1px solid rgba(255,255,255,0.05); }
+        .meter-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 20px; transition: width 0.05s ease-out; }
+
+        .setting-group { margin: 15px 0; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px; }
+        .setting-group label { margin-top: 0; display: flex; justify-content: space-between; }
+        .val-badge { color: var(--primary); font-weight: bold; }
+
+        /* Custom Slider */
+        input[type=range] { -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 6px; border-radius: 5px; padding: 0; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); cursor: pointer; box-shadow: 0 0 10px var(--primary); }
+
+        /* Canvas ซ่อนสำหรับสร้าง บับเบิ้ล PiP */
+        #pip-canvas, #pip-video { display: none; }
     </style>
 </head>
 <body>
@@ -27,69 +95,79 @@
 <div class="card">
     <!-- Step 1: เลือกโหมด -->
     <div id="step-1" class="step active">
-        <h2>เลือกโหมดการเล่น</h2>
-        <button class="btn" onclick="selectMode('world')">โลกปกติ (Local World)</button>
-        <button class="btn btn-secondary" onclick="selectMode('server')">เซิร์ฟเวอร์ (Dedicated Server)</button>
+        <h2>ระบบ Voice Chat</h2>
+        <div class="subtitle">เลือกโหมดการเชื่อมต่อกับเกมของคุณ</div>
+        <button class="btn" onclick="selectMode('world')">🎮 โลกปกติ (Local World)</button>
+        <button class="btn btn-secondary" onclick="selectMode('server')">🌐 เซิร์ฟเวอร์ (Dedicated Server)</button>
     </div>
 
     <!-- Step 2: กรอกข้อมูลการเชื่อมต่อ -->
     <div id="step-2" class="step">
-        <h2>กรอกข้อมูลการเชื่อมต่อ</h2>
+        <h2>เชื่อมต่อเข้าระบบ</h2>
+        <div class="subtitle">กรอกรายละเอียดเพื่อจับคู่ห้อง</div>
+        
         <div id="server-inputs" style="display:none;">
             <label>IP & Port เซิร์ฟเวอร์</label>
-            <input type="text" id="input-ip" placeholder="เช่น 123.45.67.89:19132">
+            <input type="text" id="input-ip" placeholder="เช่น 123.45.67.89:19132" onchange="saveData()">
         </div>
+        
         <label>รหัส 6 หลักจากในเกม</label>
-        <input type="number" id="input-pin" placeholder="กรอกเลข 6 หลัก">
-        <button class="btn" onclick="goToStep(3)">ถัดไป</button>
-        <button class="btn btn-secondary" onclick="goToStep(1)">ย้อนกลับ</button>
+        <input type="number" id="input-pin" placeholder="กรอกเลข 6 หลัก" onchange="saveData()">
+        
+        <button class="btn" onclick="goToStep(3)">ถัดไป ➔</button>
+        <button class="btn btn-secondary" onclick="goToStep(1)">⬅ ย้อนกลับ</button>
     </div>
 
     <!-- Step 3: กรอกชื่อผู้เล่น -->
     <div id="step-3" class="step">
-        <h2>ระบุชื่อในเกม</h2>
-        <input type="text" id="input-name" placeholder="กรอกชื่อ Gamertag ของคุณ">
-        <button class="btn" onclick="connectVoice()">เชื่อมต่อเลย</button>
-        <button class="btn btn-secondary" onclick="goToStep(2)">ย้อนกลับ</button>
+        <h2>ระบุตัวตน</h2>
+        <div class="subtitle">ใช้ชื่อเดียวกับ Gamertag ในเกม Minecraft</div>
+        
+        <label>ชื่อตัวละครในเกม (Player Name)</label>
+        <input type="text" id="input-name" placeholder="เช่น Steve2026" onchange="saveData()">
+        
+        <button class="btn" onclick="connectVoice()">เชื่อมต่อทันที ⚡</button>
+        <button class="btn btn-secondary" onclick="goToStep(2)">⬅ ย้อนกลับ</button>
     </div>
 
-    <!-- Step 4: Voice Control Dashboard -->
+    <!-- Step 4: Voice Dashboard -->
     <div id="step-4" class="step">
         <h2>Voice Control</h2>
-        <p style="text-align:center; color:#aaa;" id="status-text">สถานะ: กำลังเชื่อมต่อ...</p>
+        <div class="subtitle" id="status-text" style="color: var(--success);">● เชื่อมต่อสำเร็จแล้ว</div>
 
-        <!-- แถบระดับเสียงไมค์ -->
-        <label>ระดับเสียงไมโครโฟนของคุณ:</label>
+        <!-- ปุ่มเปิด Floating Bubble (Picture-in-Picture) -->
+        <button class="btn btn-pip" onclick="toggleFloatingBubble()">💬 เปิดบับเบิ้ลหน้าจอ (ลอยบน Minecraft)</button>
+
+        <!-- แถบไฟวัดระดับเสียง -->
+        <label>ระดับเสียงไมโครโฟน:</label>
         <div class="meter-box"><div id="mic-bar" class="meter-bar"></div></div>
 
-        <!-- ปุ่มเปิด/ปิดไมค์ -->
-        <button id="btn-mute" class="btn" onclick="toggleMute()">เปิดไมโครโฟนอยู่</button>
+        <!-- ปุ่ม Mute -->
+        <button id="btn-mute" class="btn" onclick="toggleMute()">🎙️ เปิดไมโครโฟนอยู่</button>
 
-        <!-- ปรับระดับเสียงไมค์ (Gain) -->
+        <!-- การตั้งค่าต่างๆ -->
         <div class="setting-group">
-            <label>ความดังไมโครโฟนส่งออก (Mic Gain)</label>
+            <label>ความดังไมโครโฟน (Mic Gain) <span class="val-badge" id="gain-val">100%</span></label>
             <input type="range" id="gain-slider" min="0" max="200" value="100" oninput="updateGain(this.value)">
         </div>
 
-        <!-- ปรับระดับเสียงได้ยิน (Master Output) -->
         <div class="setting-group">
-            <label>ระดับเสียงคนอื่นที่ได้ยิน (Master Output)</label>
-            <input type="range" id="volume-slider" min="0" max="100" value="100">
+            <label>ระยะเสียงพูด (Talk Range) <span class="val-badge" id="talk-val">15m</span></label>
+            <input type="range" id="talk-slider" min="5" max="50" value="15" oninput="updateRange('talk', this.value)">
         </div>
 
-        <!-- ปรับระยะพูด และ ระยะได้ยิน -->
         <div class="setting-group">
-            <label>ระยะการพูด (Talk Range): <span id="talk-val">15</span>m</label>
-            <input type="range" min="5" max="50" value="15" oninput="document.getElementById('talk-val').innerText=this.value">
-        </div>
-        <div class="setting-group">
-            <label>ระยะการได้ยิน (Hearing Range): <span id="hear-val">20</span>m</label>
-            <input type="range" min="5" max="50" value="20" oninput="document.getElementById('hear-val').innerText=this.value">
+            <label>ระยะการได้ยิน (Hearing Range) <span class="val-badge" id="hear-val">20m</span></label>
+            <input type="range" id="hear-slider" min="5" max="50" value="20" oninput="updateRange('hear', this.value)">
         </div>
 
-        <button class="btn btn-danger" onclick="disconnectVoice()">Disconnect</button>
+        <button class="btn btn-danger" onclick="disconnectVoice()">🔴 Disconnect (ตัดสาย)</button>
     </div>
 </div>
+
+<!-- Elements ซ่อนไว้ใช้ทำ Floating Bubble -->
+<canvas id="pip-canvas" width="200" height="200"></canvas>
+<video id="pip-video" autoplay muted></video>
 
 <script>
     const socket = io();
@@ -97,7 +175,41 @@
     let isMuted = false;
     let micStream = null;
     let audioCtx, analyser, microphone, gainNode;
+    let currentVolume = 0;
 
+    // --- 1. ระบบ Save ข้อมูลลง LocalStorage ---
+    function saveData() {
+        localStorage.setItem('vc_ip', document.getElementById('input-ip').value);
+        localStorage.setItem('vc_pin', document.getElementById('input-pin').value);
+        localStorage.setItem('vc_name', document.getElementById('input-name').value);
+        localStorage.setItem('vc_gain', document.getElementById('gain-slider').value);
+        localStorage.setItem('vc_talk', document.getElementById('talk-slider').value);
+        localStorage.setItem('vc_hear', document.getElementById('hear-slider').value);
+    }
+
+    function loadData() {
+        if (localStorage.getItem('vc_ip')) document.getElementById('input-ip').value = localStorage.getItem('vc_ip');
+        if (localStorage.getItem('vc_pin')) document.getElementById('input-pin').value = localStorage.getItem('vc_pin');
+        if (localStorage.getItem('vc_name')) document.getElementById('input-name').value = localStorage.getItem('vc_name');
+        if (localStorage.getItem('vc_gain')) {
+            const g = localStorage.getItem('vc_gain');
+            document.getElementById('gain-slider').value = g;
+            document.getElementById('gain-val').innerText = g + '%';
+        }
+        if (localStorage.getItem('vc_talk')) {
+            const t = localStorage.getItem('vc_talk');
+            document.getElementById('talk-slider').value = t;
+            document.getElementById('talk-val').innerText = t + 'm';
+        }
+        if (localStorage.getItem('vc_hear')) {
+            const h = localStorage.getItem('vc_hear');
+            document.getElementById('hear-slider').value = h;
+            document.getElementById('hear-val').innerText = h + 'm';
+        }
+    }
+    window.onload = loadData; // ดึงข้อมูลทันทีเมื่อเปิดเว็บ
+
+    // --- 2. การสลับหน้าจอ (UI Navigation) ---
     function selectMode(mode) {
         currentMode = mode;
         document.getElementById('server-inputs').style.display = (mode === 'server') ? 'block' : 'none';
@@ -109,8 +221,9 @@
         document.getElementById(`step-${stepNum}`).classList.add('active');
     }
 
-    // เชื่อมต่อเสียง + ตรวจสอบ PIN
+    // --- 3. การเชื่อมต่อเสียง ---
     async function connectVoice() {
+        saveData();
         const pin = document.getElementById('input-pin').value;
         const ipPort = document.getElementById('input-ip').value;
         const playerName = document.getElementById('input-name').value;
@@ -118,33 +231,30 @@
         if (!pin || pin.length !== 6) return alert("กรุณากรอกรหัส 6 หลักให้ถูกต้อง");
         if (!playerName) return alert("กรุณากรอกชื่อในเกม");
 
-        // ส่งตรวจสอบ PIN ไปยัง Backend
-        socket.emit('verify-pin', { mode: currentMode, pin, ipPort, playerName }, async (response) => {
-            if (!response.success) {
-                alert(response.error);
-                return;
-            }
+        socket.emit('verify-pin', { mode: currentMode, pin, ipPort, playerName }, async (res) => {
+            if (!res.success) return alert(res.error);
 
-            // เมื่อรหัสผ่าน ตรวจสอบไมโครโฟน
             try {
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 setupAudioAnalysis(micStream);
-                
-                document.getElementById('status-text').innerText = `เชื่อมต่อแล้วในชื่อ: ${playerName}`;
-                document.getElementById('status-text').style.color = '#4caf50';
+                document.getElementById('status-text').innerText = `● ออนไลน์: ${playerName}`;
                 goToStep(4);
+                startPiPCanvas(); // เตรียมวาด บับเบิ้ล
             } catch (err) {
-                alert("ไม่สามารถเข้าถึงไมโครโฟนได้ กรุณากดอนุญาตสิทธิ์บนเบราว์เซอร์");
+                alert("กรุณาอนุญาตสิทธิ์การใช้ไมโครโฟนบนเบราว์เซอร์");
             }
         });
     }
 
-    // ระบบตรวจจับระดับเสียงไมโครโฟน (Audio Level Meter)
+    // --- 4. ระบบประมวลผลเสียง ---
     function setupAudioAnalysis(stream) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioCtx.createAnalyser();
         microphone = audioCtx.createMediaStreamSource(stream);
         gainNode = audioCtx.createGain();
+
+        // ปรับ Gain ตามค่าที่บันทึกไว้
+        gainNode.gain.value = document.getElementById('gain-slider').value / 100;
 
         microphone.connect(gainNode);
         gainNode.connect(analyser);
@@ -152,45 +262,104 @@
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         function drawMeter() {
             if (isMuted) {
-                document.getElementById('mic-bar').style.width = '0%';
+                currentVolume = 0;
             } else {
                 analyser.getByteFrequencyData(dataArray);
                 let avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
-                document.getElementById('mic-bar').style.width = Math.min(100, avg * 2) + '%';
+                currentVolume = Math.min(100, avg * 2);
             }
+            document.getElementById('mic-bar').style.width = currentVolume + '%';
             requestAnimationFrame(drawMeter);
         }
         drawMeter();
     }
 
-    // เปิด/ปิด ไมโครโฟน
+    // --- 5. ปรับแต่งค่าเสียง Real-time ---
     function toggleMute() {
         isMuted = !isMuted;
-        if (micStream) {
-            micStream.getAudioTracks()[0].enabled = !isMuted;
-        }
+        if (micStream) micStream.getAudioTracks()[0].enabled = !isMuted;
         const btn = document.getElementById('btn-mute');
-        btn.innerText = isMuted ? "ปิดไมโครโฟนอยู่" : "เปิดไมโครโฟนอยู่";
+        btn.innerText = isMuted ? "🔇 ปิดไมโครโฟนอยู่" : "🎙️ เปิดไมโครโฟนอยู่";
         btn.className = isMuted ? "btn btn-danger" : "btn";
     }
 
-    // ปรับ Gain ไมโครโฟน
-    function updateGain(value) {
-        if (gainNode) {
-            gainNode.gain.value = value / 100;
+    function updateGain(val) {
+        document.getElementById('gain-val').innerText = val + '%';
+        if (gainNode) gainNode.gain.value = val / 100;
+        saveData();
+    }
+
+    function updateRange(type, val) {
+        document.getElementById(`${type}-val`).innerText = val + 'm';
+        saveData();
+    }
+
+    // --- 6. ฟีเจอร์ Floating Bubble บนหน้าจอมือถือ (Picture-in-Picture) ---
+    const canvas = document.getElementById('pip-canvas');
+    const ctx = canvas.getContext('2d');
+    const video = document.getElementById('pip-video');
+
+    function startPiPCanvas() {
+        function renderBubble() {
+            // วาดวงกลมบับเบิ้ลสไตล์ Discord
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // วงกลมพื้นหลัง
+            ctx.beginPath();
+            ctx.arc(100, 100, 80, 0, Math.PI * 2);
+            ctx.fillStyle = isMuted ? '#ef4444' : '#161b2e';
+            ctx.fill();
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = isMuted ? '#dc2626' : '#6366f1';
+            ctx.stroke();
+
+            // วงกลมแสดงระดับเสียง (ถ้ากำลังพูด)
+            if (!isMuted && currentVolume > 5) {
+                ctx.beginPath();
+                ctx.arc(100, 100, 80 + (currentVolume * 0.15), 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(16, 185, 129, ${currentVolume / 100})`;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+
+            // ข้อความบอกสถานะในบับเบิ้ล
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 20px Kanit';
+            ctx.textAlign = 'center';
+            ctx.fillText(isMuted ? "MUTED" : "VOICE", 100, 95);
+            ctx.font = '14px Kanit';
+            ctx.fillText(isMuted ? "🔇 Off" : "🎙️ On", 100, 120);
+
+            requestAnimationFrame(renderBubble);
+        }
+        renderBubble();
+
+        // ส่งเฟรมภาพจาก Canvas เข้าไปใน Video
+        const stream = canvas.captureStream(30);
+        video.srcObject = stream;
+    }
+
+    async function toggleFloatingBubble() {
+        try {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            } else {
+                await video.play();
+                await video.requestPictureInPicture();
+            }
+        } catch (err) {
+            alert("อุปกรณ์ของคุณไม่รองรับ Floating Bubble หรือเบราว์เซอร์ปฏิเสธสิทธิ์");
         }
     }
 
-    // กด Disconnect
+    // ตัดสายการเชื่อมต่อ
     function disconnectVoice() {
-        if (micStream) {
-            micStream.getTracks().forEach(track => track.stop());
-        }
+        if (micStream) micStream.getTracks().forEach(t => t.stop());
+        if (document.pictureInPictureElement) document.exitPictureInPicture();
         socket.disconnect();
         window.location.reload();
     }
 
-    // เมื่อโลกในเกมปิดลง
     socket.on('session-closed', (data) => {
         alert(data.reason);
         disconnectVoice();
